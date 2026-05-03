@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAGEIM — Стратегия</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #C9A84C;
+            --gold-light: #F0D080;
+            --gold-dark: #8B6914;
+            --bg-dark: #0D0F0A;
+            --bg-mid: #141810;
+            --bg-panel: rgba(8, 11, 6, 0.92);
+            --green-deep: #1A2C0F;
+            --green-mid: #2A4A18;
+            --green-accent: #4A8C2A;
+            --red-enemy: #C0392B;
+            --text-dim: rgba(200, 185, 140, 0.6);
+            --text-bright: #E8D9A0;
+            --border: rgba(201, 168, 76, 0.35);
+            --border-bright: rgba(201, 168, 76, 0.7);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-dark);
+            overflow: hidden;
+            font-family: 'Crimson Text', Georgia, serif;
+            color: var(--text-bright);
+        }
+
+        #gameCanvas { display: block; background: #2d5016; cursor: crosshair; }
+
+        /* ═══ ГЛАВНОЕ МЕНЮ ═══ */
+        #mainMenu {
+            position: fixed; inset: 0;
+            background: var(--bg-dark);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 1000; overflow: hidden;
+        }
+        #mainMenu.hidden { display: none; }
+
+        .menu-bg {
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 40%, rgba(42,74,24,0.5) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 20% 80%, rgba(139,105,20,0.2) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 80% 20%, rgba(74,140,42,0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .menu-vignette {
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 40%, rgba(0,0,0,0.8) 100%);
+            pointer-events: none;
+        }
+        .menu-deco-line {
+            position: absolute; width: 1px;
+            background: linear-gradient(to bottom, transparent, var(--gold-dark), transparent);
+            opacity: 0.4; animation: linePulse 4s ease-in-out infinite;
+        }
+        .menu-deco-line:nth-child(1) { left:15%; height:60%; top:20%; animation-delay:0s; }
+        .menu-deco-line:nth-child(2) { left:85%; height:50%; top:25%; animation-delay:1.5s; }
+        .menu-deco-line:nth-child(3) { left:50%; height:80%; top:10%; width:1px; opacity:0.15; animation-delay:3s; }
+        @keyframes linePulse { 0%,100%{opacity:0.2} 50%{opacity:0.5} }
+
+        .menu-content {
+            position: relative; z-index: 2;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 0;
+        }
+        .menu-emblem {
+            font-size: 56px; line-height: 1; margin-bottom: 16px;
+            filter: drop-shadow(0 0 20px rgba(201,168,76,0.6));
+            animation: emblemFloat 3s ease-in-out infinite;
+        }
+        @keyframes emblemFloat {
+            0%,100%{transform:translateY(0);filter:drop-shadow(0 0 20px rgba(201,168,76,0.6))}
+            50%{transform:translateY(-6px);filter:drop-shadow(0 0 30px rgba(201,168,76,0.9))}
+        }
+        .menu-title {
+            font-family: 'Cinzel', serif; font-size: 88px; font-weight: 900;
+            color: var(--gold-light); letter-spacing: 14px; text-transform: uppercase;
+            text-shadow: 0 0 40px rgba(201,168,76,0.8), 0 0 80px rgba(201,168,76,0.3), 2px 4px 8px rgba(0,0,0,0.9);
+            line-height: 1;
+        }
+        .menu-rule {
+            width: 380px; height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold), transparent);
+            margin: 12px 0; position: relative;
+        }
+        .menu-rule::before {
+            content: '✦'; position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%,-50%); color: var(--gold); font-size: 12px;
+            background: var(--bg-dark); padding: 0 8px;
+        }
+        .menu-subtitle {
+            font-family: 'Cinzel', serif; font-size: 15px; color: var(--text-dim);
+            letter-spacing: 6px; text-transform: uppercase; margin-bottom: 48px;
+        }
+        .menu-buttons { display: flex; flex-direction: column; gap: 14px; width: 340px; }
+        .menu-btn {
+            padding: 16px 36px; font-family: 'Cinzel', serif; font-size: 14px;
+            font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+            color: var(--text-bright); background: transparent;
+            border: 1px solid var(--border); cursor: pointer;
+            transition: all 0.25s ease; position: relative; overflow: hidden;
+        }
+        .menu-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(74,140,42,0.06) 100%);
+            opacity: 0; transition: opacity 0.25s;
+        }
+        .menu-btn::after {
+            content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 100%;
+            background: var(--gold); transform: scaleY(0); transform-origin: bottom;
+            transition: transform 0.25s ease;
+        }
+        .menu-btn:hover { border-color: var(--border-bright); color: var(--gold-light); box-shadow: 0 0 20px rgba(201,168,76,0.15), inset 0 0 20px rgba(201,168,76,0.05); }
+        .menu-btn:hover::before { opacity: 1; }
+        .menu-btn:hover::after { transform: scaleY(1); }
+        .menu-btn.primary {
+            background: linear-gradient(135deg, rgba(42,74,24,0.8) 0%, rgba(26,44,15,0.9) 100%);
+            border-color: var(--green-accent); color: #90D060;
+        }
+        .menu-btn.primary:hover { border-color: #6ABF3A; color: #A8E878; box-shadow: 0 0 30px rgba(74,140,42,0.3); }
+        .menu-btn.primary::after { background: #4A8C2A; }
+        .menu-version { position: absolute; bottom: 24px; right: 28px; font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 3px; color: var(--text-dim); opacity: 0.5; }
+        .menu-footer { margin-top: 44px; font-size: 11px; letter-spacing: 3px; color: var(--text-dim); opacity: 0.5; text-transform: uppercase; }
+
+        /* ═══ HUD ═══ */
+        #ui {
+            position: absolute; top:0; left:0;
+            background: linear-gradient(135deg, rgba(8,11,6,0.95) 0%, rgba(13,18,8,0.9) 100%);
+            border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+            padding:14px 18px; min-width:280px; user-select:none;
+        }
+        .hud-title { font-family:'Cinzel',serif; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--gold-dark); margin-bottom:10px; border-bottom:1px solid rgba(201,168,76,0.15); padding-bottom:8px; }
+        .resources-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+        .resource-item { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-bright); }
+        .resource-item .r-icon { font-size:14px; line-height:1; }
+        .resource-item .r-val { font-weight:600; color:#C8E890; }
+        .resource-item .r-max { color:var(--text-dim); font-size:11px; }
+        .hud-row { display:flex; gap:16px; font-size:12px; color:var(--text-dim); margin-top:6px; padding-top:6px; border-top:1px solid rgba(201,168,76,0.1); flex-wrap:wrap; }
+        .hud-badge { display:inline-flex; align-items:center; gap:4px; }
+        .hud-badge .label { color:var(--text-dim); }
+        .hud-badge .val { color:var(--gold); font-family:'Cinzel',serif; font-size:11px; font-weight:700; }
+        #artifacts { margin-top:8px; padding-top:8px; border-top:1px solid rgba(201,168,76,0.1); }
+        .artifacts-title { font-family:'Cinzel',serif; font-size:10px; letter-spacing:3px; color:var(--gold-dark); text-transform:uppercase; margin-bottom:4px; }
+        #artifactList { font-size:11px; color:var(--text-dim); }
+        #selection { margin-top:8px; padding-top:8px; border-top:1px solid rgba(201,168,76,0.1); font-size:12px; color:var(--text-bright); }
+        .hud-hint { margin-top:8px; font-size:10px; color:rgba(200,185,140,0.3); letter-spacing:0.5px; border-top:1px solid rgba(201,168,76,0.07); padding-top:6px; }
+
+        /* ═══ СПИСОК ВРАГОВ ═══ */
+        #enemyList {
+            position: absolute; top:0; right:0;
+            background: linear-gradient(135deg, rgba(8,11,6,0.95) 0%, rgba(13,18,8,0.9) 100%);
+            border-left:1px solid var(--border); border-bottom:1px solid var(--border);
+            padding:14px 16px; min-width:200px; max-width:220px;
+        }
+        .enemies-title { font-family:'Cinzel',serif; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#C04040; margin-bottom:8px; border-bottom:1px solid rgba(192,64,64,0.2); padding-bottom:6px; }
+        #enemyList .enemy-entry { margin:3px 0; padding:4px 8px; font-size:11px; border-left:2px solid transparent; }
+        #enemyList .enemy-entry.alive { border-left-color:var(--red-enemy); color:rgba(255,160,140,0.9); }
+        #enemyList .enemy-entry.dead { color:rgba(120,120,120,0.4); text-decoration:line-through; font-size:10px; }
+
+        /* ═══ УВЕДОМЛЕНИЯ ═══ */
+        #notification {
+            position: absolute; top:80px; left:50%; transform:translateX(-50%);
+            background: rgba(8,11,6,0.96); border:1px solid var(--border-bright);
+            color: var(--gold-light); padding:12px 28px; display:none;
+            font-family: 'Cinzel',serif; font-size:13px; letter-spacing:1px;
+            box-shadow: 0 0 30px rgba(201,168,76,0.2); white-space:nowrap; z-index:500;
+        }
+
+        /* ═══ МЕНЮ СТРОИТЕЛЬСТВА ═══ */
+        #buildMenu {
+            position: absolute; bottom:0; left:50%; transform:translateX(-50%);
+            background: linear-gradient(to top, rgba(8,11,6,0.98) 0%, rgba(13,18,8,0.95) 100%);
+            border-top:1px solid var(--border); border-left:1px solid var(--border); border-right:1px solid var(--border);
+            padding:16px 20px; display:none;
+        }
+        .build-menu-title { font-family:'Cinzel',serif; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--gold-dark); margin-bottom:12px; text-align:center; }
+        .build-btns-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+        .build-btn { padding:10px 14px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:var(--text-bright); cursor:pointer; font-family:'Crimson Text',serif; font-size:13px; transition:all 0.2s; user-select:none; white-space:nowrap; }
+        .build-btn:hover { border-color:var(--gold); color:var(--gold-light); background:rgba(201,168,76,0.06); }
+        .build-btn.disabled { opacity:0.3; cursor:not-allowed; border-color:rgba(100,100,100,0.3); }
+
+        /* ═══ МИНИМАПА ═══ */
+        #minimap { position:absolute; bottom:10px; right:10px; border:1px solid var(--border); box-shadow:0 0 20px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+<!-- ═══════ ГЛАВНОЕ МЕНЮ ═══════ -->
+<div id="mainMenu">
+    <div class="menu-bg"></div>
+    <div class="menu-vignette"></div>
+    <div class="menu-deco-line"></div>
+    <div class="menu-deco-line"></div>
+    <div class="menu-deco-line"></div>
+
+    <div class="menu-content">
+        <div class="menu-emblem">⚔️</div>
+        <div class="menu-title">MAGEIM</div>
+        <div class="menu-rule"></div>
+        <div class="menu-subtitle">Стратегия в реальном времени</div>
+
+        <div class="menu-buttons">
+            <button class="menu-btn primary" onclick="startGame('single')">Одиночная игра</button>
+            <button class="menu-btn" onclick="startGame('host')">Создать кооп</button>
+            <button class="menu-btn" onclick="startGame('join')">Подключиться к коопу</button>
+            <button class="menu-btn" onclick="showControls()">Управление</button>
+            <button class="menu-btn" onclick="showSettings()">Настройки</button>
+            <button class="menu-btn" onclick="showAbout()">О игре</button>
+        </div>
+
+        <div class="menu-footer">Mageim Team · 2026</div>
+    </div>
+    <div class="menu-version">v2.0</div>
+</div>
+
+
+<!-- ═══════ ИГРА ═══════ -->
+<canvas id="gameCanvas"></canvas>
+<canvas id="minimap" width="180" height="180"></canvas>
+
+
+<!-- HUD -->
+<div id="ui">
+    <div class="hud-title">Ресурсы</div>
+    <div class="resources-grid">
+        <div class="resource-item">
+            <span class="r-icon">🪵</span>
+            <span class="r-val" id="wood">0</span>
+            <span class="r-max">/ <span id="maxWood">200</span></span>
+        </div>
+        <div class="resource-item">
+            <span class="r-icon">🪨</span>
+            <span class="r-val" id="stone">0</span>
+            <span class="r-max">/ <span id="maxStone">200</span></span>
+        </div>
+        <div class="resource-item">
+            <span class="r-icon">🍖</span>
+            <span class="r-val" id="food">0</span>
+        </div>
+        <div class="resource-item">
+            <span class="r-icon">👥</span>
+            <span class="r-val" id="population">0</span>
+            <span class="r-max">/ <span id="maxPopulation">0</span></span>
+        </div>
+    </div>
+    <div class="hud-row">
+        <span class="hud-badge">
+            <span class="label">Ратуша</span>
+            <span class="val">Ур.<span id="townHallLevel">1</span></span>
+        </span>
+        <span class="hud-badge">
+            <span class="val" id="timeOfDay">День</span>
+        </span>
+        <span class="hud-badge">
+            <span class="label">Погода:</span>
+            <span class="val" id="weatherStatus">Ясно</span>
+        </span>
+        <span class="hud-badge">
+            <span class="label">Сеть:</span>
+            <span class="val" id="multiplayerStatus">Одиночная игра</span>
+        </span>
+    </div>
+
+    <!-- Кнопки выбора рабочих -->
+    <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(201,168,76,0.1);">
+        <div style="font-family:'Cinzel',serif; font-size:10px; letter-spacing:3px; color:var(--gold-dark); text-transform:uppercase; margin-bottom:6px;">Выбрать рабочих</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button onclick="game.selectWorkersByProfession('generalist')" style="padding:6px 10px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:var(--text-bright); cursor:pointer; font-size:11px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)'; this.style.color='var(--gold-light)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-bright)';">👷 Обычные</button>
+            <button onclick="game.selectWorkersByProfession('lumberjack')" style="padding:6px 10px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:var(--text-bright); cursor:pointer; font-size:11px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)'; this.style.color='var(--gold-light)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-bright)';">🪓 Дровосеки</button>
+            <button onclick="game.selectWorkersByProfession('miner')" style="padding:6px 10px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:var(--text-bright); cursor:pointer; font-size:11px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)'; this.style.color='var(--gold-light)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-bright)';">⛏️ Каменщики</button>
+            <button onclick="game.selectWorkersByProfession('fisher')" style="padding:6px 10px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:var(--text-bright); cursor:pointer; font-size:11px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)'; this.style.color='var(--gold-light)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-bright)';">🎣 Рыбаки</button>
+        </div>
+    </div>
+
+    <!-- Автоматическая добыча (открывается на 4 уровне ратуши) -->
+    <div id="autoGatherSection" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(201,168,76,0.1); display:none;">
+        <div style="font-family:'Cinzel',serif; font-size:10px; letter-spacing:3px; color:var(--gold-dark); text-transform:uppercase; margin-bottom:6px;">Автодобыча [Ур.4]</div>
+        <button onclick="game.autoGatherNearestResources()" style="padding:8px 12px; border:1px solid var(--border); background:rgba(74,140,42,0.3); color:var(--text-bright); cursor:pointer; font-size:11px; transition:all 0.2s; width:100%;" onmouseover="this.style.borderColor='var(--gold)'; this.style.color='var(--gold-light)'; this.style.background='rgba(74,140,42,0.5)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-bright)'; this.style.background='rgba(74,140,42,0.3)';">⚡ Добывать ближайшие ресурсы</button>
+    </div>
+
+    <!-- Сохранение и загрузка -->
+    <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(201,168,76,0.1);">
+        <div style="font-family:'Cinzel',serif; font-size:10px; letter-spacing:3px; color:var(--gold-dark); text-transform:uppercase; margin-bottom:6px;">Сохранение</div>
+        <div style="display:flex; gap:6px;">
+            <button onclick="game.saveGame()" style="padding:8px 12px; border:1px solid var(--border); background:rgba(74,140,42,0.3); color:var(--text-bright); cursor:pointer; font-size:11px; transition:all 0.2s; flex:1;" onmouseover="this.style.borderColor='var(--gold)'; this.style.color='var(--gold-light)'; this.style.background='rgba(74,140,42,0.5)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-bright)'; this.style.background='rgba(74,140,42,0.3)';">💾 Сохранить</button>
+            <button onclick="game.loadGame()" style="padding:8px 12px; border:1px solid var(--border); background:rgba(42,74,140,0.3); color:var(--text-bright); cursor:pointer; font-size:11px; transition:all 0.2s; flex:1;" onmouseover="this.style.borderColor='var(--gold)'; this.style.color='var(--gold-light)'; this.style.background='rgba(42,74,140,0.5)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-bright)'; this.style.background='rgba(42,74,140,0.3)';">📂 Загрузить</button>
+        </div>
+    </div>
+
+    <div id="artifacts">
+        <div class="artifacts-title">Артефакты</div>
+        <div id="artifactList" style="color:var(--text-dim);font-size:11px;">Нет артефактов</div>
+    </div>
+    <div id="selection"></div>
+    <div class="hud-hint">ЛКМ — выбрать · ПКМ — приказ · B — строить · WASD — камера</div>
+</div>
+
+<!-- Список врагов -->
+<div id="enemyList">
+    <div class="enemies-title">⚔ Враги</div>
+    <div id="enemyEntries"></div>
+</div>
+
+<!-- Уведомление -->
+<div id="notification"></div>
+
+<!-- Меню строительства -->
+<div id="buildMenu">
+    <div class="build-menu-title">Строительство</div>
+    <div class="build-btns-row">
+        <div class="build-btn" data-building="house">🏠 Дом (50🪵)</div>
+        <div class="build-btn" data-building="storage">📦 Склад (100🪵 80🪨)</div>
+        <div class="build-btn" data-building="barracks">⚔️ Казарма (100🪵 50🪨)</div>
+        <div class="build-btn" data-building="farm">🌾 Ферма (80🪵 30🪨)</div>
+        <div class="build-btn" data-building="archertower" data-requires="2">🏹 Башня (180🪵 120🪨) [Ур.2]</div>
+        <div class="build-btn" data-building="forge" data-requires="2">🔨 Кузница (150🪵 100🪨) [Ур.2]</div>
+        <div class="build-btn" data-building="magictower" data-requires="3">🔮 Маг.башня (200🪵 150🪨) [Ур.3]</div>
+        <div class="build-btn" data-building="upgrade">⬆️ Улучшить ратушу</div>
+    </div>
+</div>
+
+<!-- Конец игры -->
+<div id="gameOver">
+    <div id="gameOverText"></div>
+    <button onclick="location.reload()">Новая игра</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  МЕНЮ ФУНКЦИИ
+// ══════════════════════════════════════════════
+async function startGame(mode = 'single') {
+    let roomCode = '';
+    if (mode === 'join') {
+        roomCode = prompt('Введите код комнаты хоста:');
+        if (!roomCode) return;
+        roomCode = roomCode.trim();
+        if (!roomCode) return;
+    }
+
+    document.getElementById('mainMenu').classList.add('hidden');
+    setTimeout(async () => {
+        if (typeof initGame !== 'function') return;
+        const skipWorldGen = (mode === 'join'); // Гость не генерирует мир
+        const currentGame = initGame(skipWorldGen);
+        if (!currentGame) return;
+
+        try {
+            if (mode === 'host') {
+                const createdRoomId = await currentGame.startCoopHost();
+                if (navigator.clipboard?.writeText) {
+                    navigator.clipboard.writeText(createdRoomId).catch(() => {});
+                }
+                alert(`Комната создана.\n\nКод комнаты:\n${createdRoomId}\n\nПередайте этот код другу. Если браузер разрешил доступ, код уже скопирован в буфер обмена.`);
+            } else if (mode === 'join') {
+                await currentGame.joinCoopRoom(roomCode);
+            }
+        } catch (error) {
+            console.error(error);
+            alert(`Ошибка коопа: ${error?.message || error}`);
+            location.reload();
+        }
+    }, 100);
+}
+
+function showControls() {
+    alert(`УПРАВЛЕНИЕ — MAGEIM
+
+🖱️ Мышь
+  ЛКМ — выбрать юнит / здание
+  ПКМ — приказ (движение / атака / сбор)
+  СКМ (зажать) — перетащить камеру
+  Shift+ЛКМ — добавить к выделению
+
+⌨️ Клавиатура
+  WASD / Стрелки — камера
+  B — открыть меню строительства
+  G — режим охраны (для бойцов)
+  V — снять режим охраны
+  ESC — отмена`);
+}
+
+function showAbout() {
+    alert(`MAGEIM v2.0 — Стратегия в реальном времени
+
+Особенности:
+  • Динамический день/ночь с системой погоды
+  • До 4 вражеских фракций с AI
+  • Система артефактов и данжей
+  • Нарастающая сложность по ночам
+  • Улучшенная пиксельная графика
+  • Система прокачки бойцов
+
+MaGeim Team · 2026`);
+}
+
+function showSettings() {
+    const hasLocalSave = localStorage.getItem('mageim_save') !== null;
+    const saveInfo = hasLocalSave ? '\n\n💾 Есть локальное сохранение' : '\n\n⚠️ Нет локального сохранения';
+
+    const choice = prompt(`НАСТРОЙКИ — MAGEIM${saveInfo}
+
+Выберите действие:
+1 — Экспортировать сохранение в файл
+2 — Импортировать сохранение из файла
+3 — Удалить локальное сохранение
+0 — Назад
+
+Введите номер:`);
+
+    if (choice === '1') {
+        if (!hasLocalSave) {
+            alert('❌ Нет сохранения для экспорта. Сначала сохраните игру.');
+            return;
+        }
+        try {
+            const saveData = localStorage.getItem('mageim_save');
+            const blob = new Blob([saveData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.download = `mageim_save_${date}.json`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+            alert('✅ Сохранение скачано');
+        } catch (e) {
+            alert('❌ Ошибка экспорта');
+        }
+    } else if (choice === '2') {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const saveData = JSON.parse(event.target.result);
+                    localStorage.setItem('mageim_save', JSON.stringify(saveData));
+                    alert('✅ Сохранение импортировано. Загрузите игру через кнопку "Загрузить" в игре.');
+                } catch (err) {
+                    alert('❌ Ошибка импорта файла');
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    } else if (choice === '3') {
+        if (!hasLocalSave) {
+            alert('⚠️ Нет сохранения для удаления');
+            return;
+        }
+        if (confirm('Вы уверены? Это действие нельзя отменить.')) {
+            localStorage.removeItem('mageim_save');
+            alert('✅ Сохранение удалено');
+        }
+    }
+}
+</script>
+
+<script src="weather.js"></script>
+<script src="enhanced-graphics.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
